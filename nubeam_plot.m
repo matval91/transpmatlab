@@ -1,18 +1,8 @@
 function nubeam_plot(transp, t)
+set(0, 'DefaultLineLineWidth', 2);
+set(0,'defaultAxesFontSize',16);
 %
-% gets equilibrium information at asked time
-%
-% takes output from netcdf output of TRANSP and write EXPEQ_name_time file needed for interface
-% with CHEASE, containing the minimum information needed to reconstruct an equilibrium
-%
-% varargin{1}: directory name where netcdf file resides
-% varargin{2}: file name
-% varargin{3}: netcdf function
-%      if varargin{1}, {2} or {3} are empty, ask for it
-% varargin{4}: rr(time,points,rho)
-% varargin{5}: yy(time,points,rho)
-%      if rr, yy, not given, compute plasma boundary from funnetcdf and asymmetric moments
-%
+% gets and plots infomrations about nubeam
 
 %% collect dimensions
 time = transp.coords.TIME.data;
