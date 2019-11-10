@@ -9,7 +9,7 @@ set(0,'defaultAxesFontSize',16)
 %% read transp file
 
 [fname,pname]=uigetfile('*.cdf','Open NetCDF File');
-matcdf_per_name = cdf2mat(pname,fname);
+matcdf_per_name = cdf2mat([pname,fname]);
 
 %% getting variable names
 varnames = fieldnames(matcdf_per_name.allvars);
@@ -21,7 +21,7 @@ for i=1:length(coordnames)
   coordnames_labels{i} = matcdf_per_name.coords.(coordnames{i}).label;
 end
 %% GUI
-matcdf.hfig_main=figure;
+matcdf.hfig_main=figure('Name','TRANSP GUI');
 set(matcdf.hfig_main,'position',[50 80 900 750])
 matcdf.hvarnames=uicontrol('style','listbox','string',varnames_labels,'position',[20 205 800 510]);
 matcdf.hvarnames_text=uicontrol('style','text','string','variables (dims): long name [units]','position',[20 720 300 15]);
@@ -52,7 +52,11 @@ cback = ['figure(matcdf.hfig_plot);plot(matcdf_per_name.allvars.(varnames{get(ma
                     'matcdf_per_name.allvars.(varnames{get(matcdf.hvarnames,''Value'')}).units]);'];
 matcdf.h(5)=uicontrol('style','pushbutton','String','Plot vs dim 2','position',[650 140 200 20], ...
           'Callback',cback);
-matcdf.h(6)=uicontrol('style','pushbutton','String','Plot NUBEAM','position',[650 170 200 20], ...
-          'Callback','nubeam_plot(matcdf_per_name)');
+uitime = uieditfield('numeric',...
+        'position',[650 170 50 20], ...
+        'Limit', [min(matcdf_per_name.allvars.TIME.data), max(matcdf_per_name.allvars.TIME.data)]);
+%time=uitime.value;
+%matcdf.h(6)=uicontrol('style','pushbutton','String','Plot NUBEAM','position',[700 170 150 20], ...
+%          'Callback','nubeam_plot(matcdf_per_name, time)');
 matcdf.hfig_plot=figure;
 %%

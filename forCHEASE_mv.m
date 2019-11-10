@@ -1,4 +1,4 @@
-function [pname,fname,funnetcdf,fname_out,varargout]=forCHEASE_mv(varargin)
+function [funnetcdf,fname_out,globalsvalues, namelist_struct, varargout]=forCHEASE_mv(fname, funnetcdf, t0, ichease, tension)
 %
 % gets equilibrium information at asked time
 %
@@ -14,37 +14,31 @@ function [pname,fname,funnetcdf,fname_out,varargout]=forCHEASE_mv(varargin)
 %      if rr, yy, not given, compute plasma boundary from funnetcdf and asymmetric moments
 %
 
-if nargin<3 || isempty(varargin{1}) || isempty(varargin{2}) || isempty(varargin{3})
-  [fname,pname]=uigetfile('*.cdf','Open NetCDF File');
-  funnetcdf=cdf2mat([pname fname]);
-else
-  pname=varargin{1};
-  fname=varargin{2};
-  funnetcdf=varargin{3};
-end
 funnetcdf=funnetcdf.allvars;
 timearr=funnetcdf.TIME.data;
 pcur=funnetcdf.PCUR.data;
-figure;grid on; zoom on
-plot(timearr,pcur)
-title('Ip vs time')
+if isempty(t0)
+    figure;grid on; zoom on
+    plot(timearr,pcur)
+    title('Ip vs time')
 
-t0=input('enter time for equilibrium interface: ');
-close(gcf)
+    t0=input('enter time for equilibrium interface: ');
+    close(gcf)
+end
 [~, ii]=min(abs(timearr-t0));
 itime=ii;
 disp(['closest time chosen: ' num2str(timearr(itime))]);
 t0=timearr(itime);
 
 % plasma boundary
-if ~isempty(varargin) && length(varargin)>=4
-  % rr, yy given
-  R=varargin{4}(itime,:,end)./100;
-  Z=varargin{5}(itime,:,end)./100;
-else
-  % get R,Z at itime
-  [R,Z]=plboundTRANSP(funnetcdf,itime,1);
-end
+% if ~isempty(varargin) && length(varargin)>=4
+%   % rr, yy given
+%   R=varargin{4}(itime,:,end)./100;
+%   Z=varargin{5}(itime,:,end)./100;
+% else
+%   % get R,Z at itime
+[R,Z]=plboundTRANSP(funnetcdf,itime,1);
+% end
 
 % create EXPEQ file, need R0 and B0 to normalize
 % R, Z in m
@@ -131,7 +125,7 @@ end
 
 % pprime and GGprime profiles on sqrt(psi) mesh
 % allow for use of jpar as well
-tension=input('enter return or smoothing value (tension), default=1e-4: ');
+%tension=input('enter return or smoothing value (tension), default=1e-4: ');
 if isempty(tension)
   tension=1e-4;
 end
@@ -231,17 +225,19 @@ fprintf(fid,'   %.12g  kappa\n',kappa);
 fprintf(fid,'   %.12g  aminor\n',aminor);
 
 fprintf(fid,'\n');
-fprintf(fid,'from TRANSP file: %s%s\n',pname,fname);
+fprintf(fid,'from TRANSP file: %s%s\n',fname);
 fprintf(fid,'time chosen: %f\n',t0);
 fprintf(fid,'tension for profiles (smoothing): %g\n',tension);
 fprintf(fid,'date: %s\n',date);
 fclose(fid);
 
-ichease=0;
-ichease=input('Run chease? (0=no, 1=yes) ');
+%ichease=0;
+%ichease=input('Run chease? (0=no, 1=yes) ');
 
 if ichease
   addpath('/home/osauter/chease/matlab','-end')
-  [fname_out,~,~,~] = run_chease(1, ffname);
+  [~,~,namelist_struct] = run_chease;
+  namelist_struct.ncscal = 4;
+  [fname_out,globalsvalues,namelist_struct,~] = run_chease(1, ffname);
 end
 return

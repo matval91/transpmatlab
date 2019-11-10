@@ -1,4 +1,4 @@
-function nubeam_plot(transp)%, t)
+function nubeam_plot(transp, t)
 %
 % gets equilibrium information at asked time
 %
@@ -17,7 +17,10 @@ function nubeam_plot(transp)%, t)
 %% collect dimensions
 time = transp.coords.TIME.data;
 rho = transp.coords.X.data; %time and index dependant
-t=0.45;
+if isempty(t) || t<min(time) || t> max(time)
+    fprintf('Set time to 0, timerange = %s - %s \n',num2str(min(time)), num2str(max(time)));
+    t=0;
+end
 [~,ind]  = min(abs(t-time));
 
 %% collect 1D data
@@ -29,6 +32,9 @@ p_e = transp.allvars.BPTE.data*1e-6;
 p_i = transp.allvars.BPTI.data*1e-6;
 p_th = transp.allvars.BPTH.data*1e-6;
 
+neut = transp.allvars.NEUTT.data;
+neut_DD = transp.allvars.NEUTX_DD.data;
+neut_thnuc = transp.allvars.NEUTX.data;
 
 %% collect 2D data
 area = transp.allvars.DAREA.data; %differential area (area of one flux tube)
@@ -42,8 +48,8 @@ p_beam = transp.allvars.PMHDF_IN.data;
 I_beam = dot(j_beam/10.,area)*1e-3; %kA
 
 %% plot 1D
-figure('Position', [10 10 1300 600]);
-subplot(3,2,[1,3,5])
+figure('Position', [10 10 1000 1000]);
+ax1=subplot(3,2,[1,3]);
 hold on;
 p=p_inj; plot(time, p, 'Color', 'k', 'DisplayName', 'Inj.');
 p=p-p_ST; plot(time, p, 'Color', 'c', 'DisplayName', 'Shine-through');
@@ -53,30 +59,39 @@ p=p-p_e; plot(time, p, 'Color', 'b', 'DisplayName', 'electrons');
 p=p-p_i; plot(time, p, 'Color', 'r', 'DisplayName', 'ions');
 p=p-p_th; plot(time, p, 'Color', 'm', 'DisplayName', 'Thermalized');
 hold off;
-title(sprintf('TRANSP: %s Powers vs time',num2str(transp.shot)));
+title(sprintf('TRANSP: %s',num2str(transp.shot)));
 xlabel('t [sec]'); ylabel('P [MW]'); grid on; box on; legend show;
+
+ax5=subplot(3,2,5);
+hold on;
+plot(time, neut,'k');
+% plot(time, neut_DD,'r', 'DisplayName', 'DD neutrons');
+% plot(time, neut_thnuc,'r', 'DisplayName', 'thermonuclear neutrons');
+xlabel('t [sec]'); ylabel('neutrons [1/sec]'); grid on; box on; 
+hold off;
+linkaxes([ax1,ax5], 'x');
 
 %% plot 2D
 
-ax1=subplot(3,2,2);
+ax2=subplot(3,2,2);
 hold on;
 plot(rho(:,ind), pe_beam(:,ind), 'r', 'DisplayName', 'electrons')
 plot(rho(:,ind), pi_beam(:,ind), 'k', 'DisplayName', 'ions')
 hold off;
-title(sprintf('TRANSP: %s | time %s',num2str(transp.shot), num2str(time(ind))));
+title(sprintf('time %s',num2str(time(ind))));
 xlabel('\rho_{tor}'); ylabel('p [MW/m^3]'); grid on; box on; legend show;
 
-ax2=subplot(3,2,4);
+ax4=subplot(3,2,4);
 hold on;
 plot(rho(:,ind), j_beam(:,ind), 'k')
 hold off;
 xlabel('\rho_{tor}'); ylabel('j [kA/m^2]'); grid on; box on;
 
-ax3=subplot(3,2,6);
+ax6=subplot(3,2,6);
 hold on;
 plot(rho(:,ind), n_beam(:,ind), 'k')
 hold off;
 xlabel('\rho_{tor}'); ylabel('n [1/cm^3]'); grid on; box on;
-linkaxes([ax1,ax2, ax3], 'x');
+linkaxes([ax2,ax4, ax6], 'x');
 
 return
