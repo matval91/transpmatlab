@@ -103,6 +103,8 @@ end
 top_attr_names = {allinfo.Attributes(:).Name};
 ij = strmatch('shot',top_attr_names,'exact');
 matcdf_per_name.shot = allinfo.Attributes(ij).Value;
+matcdf_per_name.fname = pfname;
+matcdf_per_name.id = pfname(length(pfname)-11:length(pfname)-4);
 transpmat = matcdf_per_name;
 netcdf.close(funnetcdf);
 

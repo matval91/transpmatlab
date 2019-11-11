@@ -1,39 +1,30 @@
-function nubeam_plot(transp, t)
+function nubeam_plot(nubeammat)
 set(0, 'DefaultLineLineWidth', 2);
 set(0,'defaultAxesFontSize',16);
 %
-% gets and plots infomrations about nubeam
+% plots informations about nubeam
 
 %% collect dimensions
-time = transp.coords.TIME.data;
-rho = transp.coords.X.data; %time and index dependant
-if isempty(t) || t<min(time) || t> max(time)
-    fprintf('Set time to 0, timerange = %s - %s \n',num2str(min(time)), num2str(max(time)));
-    t=0;
-end
-[~,ind]  = min(abs(t-time));
-
+time = nubeammat.time;
+rho = nubeammat.rho; %time and index dependant
+ind=nubeammat.ind;
 %% collect 1D data
-p_inj = transp.allvars.PINJ.data*1e-6; % total injected power
-p_ST = transp.allvars.BPSHI.data*1e-6; % shine-through
-p_OL = transp.allvars.BPLIM.data*1e-6; % orbit losses
-p_CX = transp.allvars.BPCXI.data*1e-6+transp.allvars.BPCXX.data*1e-6; % charge-exchange
-p_e = transp.allvars.BPTE.data*1e-6;
-p_i = transp.allvars.BPTI.data*1e-6;
-p_th = transp.allvars.BPTH.data*1e-6;
-
-neut = transp.allvars.NEUTT.data;
-neut_DD = transp.allvars.NEUTX_DD.data;
-neut_thnuc = transp.allvars.NEUTX.data;
+p_inj = nubeammat.d1.p_inj; % total injected power
+p_ST = nubeammat.d1.p_ST; % shine-through
+p_OL = nubeammat.d1.p_OL; % orbit losses
+p_CX = nubeammat.d1.p_CX; % charge-exchange
+p_e = nubeammat.d1.p_e;
+p_i = nubeammat.d1.p_i;
+p_th = nubeammat.d1.p_th;
+neut = nubeammat.d1.neut;
 
 %% collect 2D data
-area = transp.allvars.DAREA.data; %differential area (area of one flux tube)
-vol = transp.allvars.DVOL.data;%differential volume (volume of one flux tube)
-j_beam = transp.allvars.CURB.data*10.; % kA/m^2
-pe_beam = transp.allvars.PBE.data; %MW/m3
-pi_beam = transp.allvars.PBI.data;%MW/m3
-n_beam = transp.allvars.BDENS.data*1e6; %1/m3
-p_beam = transp.allvars.PMHDF_IN.data;
+area = nubeammat.d2.area; %differential area (area of one flux tube)
+j_beam = nubeammat.d2.j_beam; % kA/m^2
+pe_beam = nubeammat.d2.pe_beam; %MW/m3
+pi_beam = nubeammat.d2.pi_beam;%MW/m3
+n_beam = nubeammat.d2.n_beam; %1/m3
+pr_beam = nubeammat.d2.pr_beam;
 %% integrate 2D data
 I_beam = dot(j_beam/10.,area)*1e-3; %kA
 
@@ -49,7 +40,7 @@ p=p-p_e; plot(time, p, 'Color', 'b', 'DisplayName', 'electrons');
 p=p-p_i; plot(time, p, 'Color', 'r', 'DisplayName', 'ions');
 p=p-p_th; plot(time, p, 'Color', 'm', 'DisplayName', 'Thermalized');
 hold off;
-title(sprintf('TRANSP: %s',num2str(transp.shot)));
+title(sprintf('TRANSP: %s',num2str(nubeammat.id)));
 xlabel('t [sec]'); ylabel('P [MW]'); grid on; box on; legend show;
 
 ax5=subplot(3,2,5);
@@ -65,21 +56,21 @@ linkaxes([ax1,ax5], 'x');
 
 ax2=subplot(3,2,2);
 hold on;
-plot(rho(:,ind), pe_beam(:,ind), 'r', 'DisplayName', 'electrons')
-plot(rho(:,ind), pi_beam(:,ind), 'k', 'DisplayName', 'ions')
+plot(rho, pe_beam, 'r', 'DisplayName', 'electrons')
+plot(rho, pi_beam, 'k', 'DisplayName', 'ions')
 hold off;
 title(sprintf('time %s',num2str(time(ind))));
 xlabel('\rho_{tor}'); ylabel('p [MW/m^3]'); grid on; box on; legend show;
 
 ax4=subplot(3,2,4);
 hold on;
-plot(rho(:,ind), j_beam(:,ind), 'k')
+plot(rho, j_beam, 'k')
 hold off;
 xlabel('\rho_{tor}'); ylabel('j [kA/m^2]'); grid on; box on;
 
 ax6=subplot(3,2,6);
 hold on;
-plot(rho(:,ind), n_beam(:,ind), 'k')
+plot(rho, n_beam, 'k')
 hold off;
 xlabel('\rho_{tor}'); ylabel('n [1/cm^3]'); grid on; box on;
 linkaxes([ax2,ax4, ax6], 'x');

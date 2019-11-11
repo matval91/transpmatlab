@@ -1,4 +1,4 @@
-function [funnetcdf,fname_out,globalsvalues, namelist_struct, varargout]=forCHEASE_mv(fname, funnetcdf, t0, ichease, tension)
+function [funnetcdf,fname_out,globalsvalues, namelist_struct]=forCHEASE_mv(fname, funnetcdf, t0, ichease, tension)
 %
 % gets equilibrium information at asked time
 %
