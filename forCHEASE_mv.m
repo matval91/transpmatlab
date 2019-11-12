@@ -60,7 +60,7 @@ B0=bzxr(itime)/R0/100;
 
 ii=findstr(fname,'.');
 EXPEQend=[fname(1:ii-1) '_t' num2str(t0)];
-ffname = ['EXPEQ_' EXPEQend];
+ffname = sprintf('/tmp/%s/EXPEQ_',getenv('USER'), EXPEQend);
 fid=fopen(ffname,'w');
 % aspect ratio
 fprintf(fid,'   %.12f\n',aminor/R0);
