@@ -1,4 +1,4 @@
-function nubeam_struct=get_nubeam(transp,t)
+function nubeam_struct=nubeam_get(transp,t)
     %
     % gets information about nubeam
 
@@ -10,7 +10,12 @@ function nubeam_struct=get_nubeam(transp,t)
         fprintf('Set time to 0, timerange = %s - %s \n',num2str(min(time)), num2str(max(time)));
         t=0;
     end
-    [~,ind]  = min(abs(t-time));
+    try
+        [~,ind]  = min(abs(t-time));
+    catch
+        [~,ind]  = min(abs(t(1)-time));
+    end
+        
     nubeam_struct.time=time;
     nubeam_struct.rho=rho(:,ind);
     nubeam_struct.ind=ind;

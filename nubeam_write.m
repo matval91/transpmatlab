@@ -1,4 +1,4 @@
-function write_nubeam(nubeammat)
+function nubeam_write(nubeammat)
 ind=nubeammat.ind;
 time = nubeammat.time(ind);
 rho = nubeammat.rho; %time and index dependant
@@ -16,6 +16,7 @@ header2=sprintf('rho_tor area(m2) j(kA/m2) pe(MW/m3) pi(MW/m3) n(10e19/m3) pr(kP
 % open a file for writing
 dirrr=sprintf('/tmp/%s',getenv('USER'));
 fname=sprintf('%s/NUBEAM%s_t%f.dat', dirrr, nubeammat.id, time);
+nubeammat.fname = fname;
 fid = fopen(fname, 'w');
 fprintf('\n\n NUBEAM written on %s \n\n\n', fname);
 % print a title, followed by a blank line
