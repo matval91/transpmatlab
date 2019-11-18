@@ -32,13 +32,15 @@ I_beam = dot(j_beam/10.,area)*1e-3; %kA
 figure('Position', [10 10 1000 1000]);
 ax1=subplot(3,2,[1,3]);
 hold on;
-p=p_inj; plot(time, p, 'Color', 'k', 'DisplayName', 'Inj.');
-p=p-p_ST; plot(time, p, 'Color', 'c', 'DisplayName', 'Shine-through');
-p=p-p_OL; plot(time, p, 'Color', 'b', 'DisplayName', 'Orbit losses');
-p=p-p_CX; plot(time, p, 'Color', 'g', 'DisplayName', 'CX');
-p=p-p_e; plot(time, p, 'Color', 'b', 'DisplayName', 'electrons');
-p=p-p_i; plot(time, p, 'Color', 'r', 'DisplayName', 'ions');
-p=p-p_th; plot(time, p, 'Color', 'm', 'DisplayName', 'Thermalized');
+p=p_th; plot(time, p, 'Color', 'm', 'DisplayName', 'Thermalized');
+X=[time,fliplr(time)];Y=[fliplr(p), zeros(size(p)),]; fill(X,Y,'b'); 
+%patch([time],[p],'m','LineStyle','none', 'HandleVisibility', 'off')
+p=p+p_i; plot(time, p, 'Color', 'r', 'DisplayName', 'ions');
+%patch([time flip(time)],[p flip(p-p_i)],'r','LineStyle','none','HandleVisibility', 'off')
+p=p+p_e; plot(time, p, 'Color', 'b', 'DisplayName', 'electrons');
+p=p+p_CX; plot(time, p, 'Color', 'g', 'DisplayName', 'CX');
+p=p+p_OL; plot(time, p, 'Color', 'b', 'DisplayName', 'Orbit losses');
+p=p+p_ST; plot(time, p, 'Color', 'k', 'DisplayName', 'Total');
 hold off;
 title(sprintf('TRANSP: %s',num2str(nubeammat.id)));
 xlabel('t [sec]'); ylabel('P [MW]'); grid on; box on; legend show;

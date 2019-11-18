@@ -1,10 +1,11 @@
 function transpmat = cdf2mat(pfname)
 %
-% some trials with netcdf, using 50725c01.cdf as test
-%
-% Installed matlab netcdf toolbox from web (http://crusty.er.usgs.gov/~cdenham/MexCDF/nc4ml5.html#GUIDE)
-%
-% then
+% transpmat = cdf2mat(pfname)
+% Input:
+%    pfname: name (with folder) of the file to read
+% Output
+%    transpmat: matlab structure with variables from transp
+
 funnetcdf=netcdf.open(pfname,'nowrite');
 
 % all data of all vars

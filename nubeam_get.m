@@ -6,16 +6,12 @@ function nubeam_struct=nubeam_get(transp,t)
     %% collect dimensions
     time = transp.coords.TIME.data;
     rho = transp.coords.X.data; %time and index dependant
-    if isempty(t) || t<min(time) || t> max(time)
+    if isempty(t) | t<min(time) | t>max(time)
         fprintf('Set time to 0, timerange = %s - %s \n',num2str(min(time)), num2str(max(time)));
         t=0;
     end
-    try
-        [~,ind]  = min(abs(t-time));
-    catch
-        [~,ind]  = min(abs(t(1)-time));
-    end
-        
+    [~,ind]  = min(abs(t-time));
+    
     nubeam_struct.time=time;
     nubeam_struct.rho=rho(:,ind);
     nubeam_struct.ind=ind;
@@ -24,10 +20,10 @@ function nubeam_struct=nubeam_get(transp,t)
     p_inj = transp.allvars.PINJ.data*1e-6; % total injected power
     p_ST = transp.allvars.BPSHI.data*1e-6; % shine-through
     p_OL = transp.allvars.BPLIM.data*1e-6; % orbit losses
-    p_CX = transp.allvars.BPCXI.data*1e-6+transp.allvars.BPCXX.data*1e-6; % charge-exchange
     p_e = transp.allvars.BPTE.data*1e-6;
     p_i = transp.allvars.BPTI.data*1e-6;
     p_th = transp.allvars.BPTH.data*1e-6;
+    p_CX = p_inj-p_ST-p_OL-p_e-p_i-p_th;
 
     neut = transp.allvars.NEUTT.data;
     neut_DD = transp.allvars.NEUTX_DD.data;
