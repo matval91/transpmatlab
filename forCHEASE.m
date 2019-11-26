@@ -1,4 +1,6 @@
-function [funnetcdf,fname_out,globalsvalues, namelist_struct]=forCHEASE(fname, funnetcdf, t0, ichease, tension)
+function [expeq, fname_out, globalsvalues, namelist_struct]=forCHEASE(funnetcdf, t0, ichease, tension)
+%
+% [funnetcdf,fname_out,globalsvalues, namelist_struct]=forCHEASE(fname, funnetcdf, t0, ichease, tension)
 %
 % gets equilibrium information at asked time
 %
@@ -13,7 +15,7 @@ function [funnetcdf,fname_out,globalsvalues, namelist_struct]=forCHEASE(fname, f
 % varargin{5}: yy(time,points,rho)
 %      if rr, yy, not given, compute plasma boundary from funnetcdf and asymmetric moments
 %
-
+fname = funnetcdf.id;
 funnetcdf=funnetcdf.allvars;
 timearr=funnetcdf.TIME.data;
 pcur=funnetcdf.PCUR.data;
@@ -58,13 +60,18 @@ kappa=bminor/aminor;
 bzxr=funnetcdf.BZXR.data;
 B0=bzxr(itime)/R0/100;
 
-ii=findstr(fname,'.');
-EXPEQend=[fname(1:ii-1) '_t' num2str(t0)];
-ffname = sprintf('/tmp/%s/EXPEQ_',getenv('USER'), EXPEQend);
-fid=fopen(ffname,'w');
+%ii=findstr(fname,'.');
+EXPEQend=[fname '_t' num2str(t0)];
+ffname = [sprintf('/tmp/%s/EXPEQ_',getenv('USER')), EXPEQend];
+fname_out = ffname;
+fid=fopen([ffname,'_bak'],'w');
+expeq = struct();
+expeq.fnamefull=fname_out;
 % aspect ratio
+expeq.epsilon = aminor/R0;
 fprintf(fid,'   %.12f\n',aminor/R0);
 % Z0 normalised to R0
+expeq.zgeom = Z0/R0;
 fprintf(fid,'   %.12f\n',Z0/R0);
 
 % profiles
@@ -95,7 +102,7 @@ GR2I = 1e4 * a_GR2I(:,itime);
 ptowb=interpos(13,cat(1, 0, X),cat(1,a_ptowb(1,itime), a_ptowb(:,itime)),XB,0.0,[1 0],[0 0]); % imposes 0 derivative in center
 % pplas=interpos(13,X,a_pplas(itime,:),XB);
 pplas=interpos(13,cat(1, 0, X),cat(1, a_pplas(1,itime), a_pplas(:,itime)),XB,0.0,[1 0],[0 0]); % 0 derivative in center
-iplot=1;
+iplot=0;
 if iplot
   figure
   plot(X,a_ptowb(:, itime));
@@ -111,15 +118,19 @@ pedge=ptowb(end);
 % pedge normalised by: mu0/B0^2
 mu0=4.e-7*pi;
 fprintf(fid,'   %.12f\n',pedge*mu0/B0^2);
-
+expeq.pedge = pedge*mu0/B0^2;
 % plasma boundary (normalized to R0)
 % seems R, Z have many turns, so take just first turn, once passed twice the same value of atan2
 ii=find((atan2(R(1:end-1),Z(1:end-1))-atan2(R(1),Z(1))).*(atan2(R(2:end),Z(2:end))-atan2(R(1),Z(1)))<0);
 if length(ii)>1
+  expeq.n_psi = ii(2);
+  expeq.RZ_psi = [R(1:ii(2)) ;Z(1:ii(2))]/R0;  expeq.RZ_psi= expeq.RZ_psi';
   fprintf(fid,'   %d\n',ii(2));
   fprintf(fid,'   %.12f     %.12f\n',[R(1:ii(2)) ;Z(1:ii(2))]/R0);
 else
-  fprintf(fid,'   %d\n',length(R));
+  expeq.n_psi = length(R);
+  expeq.RZ_psi = [R ;Z]/R0;  expeq.RZ_psi =  expeq.RZ_psi';
+  fprintf(fid,'   %d\n',length(R)); 
   fprintf(fid,'   %.12f     %.12f\n',[R ;Z]/R0);
 end
 
@@ -129,7 +140,6 @@ end
 if isempty(tension)
   tension=1e-4;
 end
-
 sout= 0:1/41:1;
 psiout=sout.^2 .* PLFLX(end); % in Webers so that derivative with psi has correct dimension
 % Warning: use mesh with x coordinate between 0 and 1 so tension has same realtive effect
@@ -140,7 +150,7 @@ pprime=pprime./xscale;
 [G,Gprime]=interpos(13,PLFLX./xscale,GFUN,psiout./xscale,tension);
 Gprime=Gprime./xscale;
 GGprime=G.*Gprime;
-
+expeq.pressure=p'*mu0./B0^2;
 jdotnorm=100.* PLJB ./ R0 ./ GFUN ./ GR2I;
 [jpar]=interpos(13,PLFLX./xscale,jdotnorm,psiout./xscale,tension);
 
@@ -178,15 +188,24 @@ if iplot
   legend('<J.B>/R0/<B.GRAD PHI>','fit')
 end
 
+expeq.nrhotype = 0; %poloidal flux
+expeq.nppfun=8; %use pressure in chease
+expeq.nsttp = 4; %use <jB>/B0 
+
+expeq.n_rho = length(sout);
 fprintf(fid,'   %d\n',length(sout));
 fprintf(fid,'   1\n'); % means pprim and GGprime are given
 % s-mesh
+expeq.rho = sout';
 fprintf(fid,'   %.12f\n',sout);
 % pprime normalised by mu0*R0^2/B0 from MKSA
+expeq.Pprime = pprime*mu0.*R0.^2/B0; expeq.Pprime= expeq.Pprime';
 fprintf(fid,'   %.12f\n',pprime*mu0.*R0.^2/B0);
-% GGprime normalised by 1/B0 from MKSA
+% GGprime normalised by 1/B0 from MKSA 
+expeq.TTprime = GGprime/B0; expeq.TTprime = expeq.TTprime';
 fprintf(fid,'   %.12f\n',GGprime/B0);
 % jpar normalised by mu0 R0/B0 from MKSA
+expeq.jdotb_over_b0 = jpar.*mu0.*R0/B0; expeq.jdotb_over_b0 =expeq.jdotb_over_b0';
 fprintf(fid,'   %.12f\n',jpar.*mu0.*R0/B0);
 
 % part necessary for equilibrium reconstruction finished in EXPEQ
@@ -202,13 +221,13 @@ RAXIS=funnetcdf.RAXIS.data; RAXIS=RAXIS(itime);
 fprintf(fid,'   %.12g  RAXIS [m]\n',RAXIS/100);
 ZAXIS=funnetcdf.YAXIS.data; ZAXIS=ZAXIS(itime);
 fprintf(fid,'   %.12g  ZAXIS [m]\n',ZAXIS/100);
-Q0=funnetcdf.Q0.data; Q0=Q0(itime);
-fprintf(fid,'   %.12g q0\n',Q0);
-Q=funnetcdf.Q.data; Q=Q(:,itime);
-fprintf(fid,'   %.12g  qedge\n',Q(end));
-q95=interpos(13,PLFLX/PLFLX(end),Q,[0.95 0.95]);
+q0=funnetcdf.Q0.data; q0=q0(itime);
+fprintf(fid,'   %.12g q0\n',q0);
+q=funnetcdf.Q.data; q=q(:,itime);
+fprintf(fid,'   %.12g  qedge\n',q(end));
+q95=interpos(13,PLFLX/PLFLX(end),q,[0.95 0.95]);
 fprintf(fid,'   %.12g  q95\n',q95(1));
-qmin=min(Q);
+qmin=min(q);
 fprintf(fid,'   %.12g  qmin\n',qmin(1));
 lio2=funnetcdf.LIO2.data; lio2=lio2(itime);
 fprintf(fid,'   %.12g  li\n',2.*lio2);
@@ -230,14 +249,19 @@ fprintf(fid,'time chosen: %f\n',t0);
 fprintf(fid,'tension for profiles (smoothing): %g\n',tension);
 fprintf(fid,'date: %s\n',date);
 fclose(fid);
-
-%ichease=0;
-%ichease=input('Run chease? (0=no, 1=yes) ');
-
+tmp=split(expeq.fnamefull, '/');
+expeq.fname = tmp{4};
+expeq.pathname=expeq.fnamefull(1:end-length(expeq.fname));
+[EXPEQdataout,fclose_out] =  write_expeq(expeq,ffname); % to write EXPEQ file
+disp(ffname)
 if ichease
-  addpath('/home/osauter/chease/matlab','-end')
-  [~,~,namelist_struct] = run_chease;
+  %addpath('/home/sauter/chease/matlab','-end')
+  [~,~,namelist_struct] = run_chease(1);
   namelist_struct.ncscal = 4;
-  [fname_out,globalsvalues,namelist_struct,~] = run_chease(1, ffname);
+  fname_nml='/tmp/vallar/chease_namelist';
+  [nl, fname_eff] = write_namelist_chease(fname_nml,namelist_struct);
+  [fname_out,globalsvalues,namelist_struct] = run_chease(nl, ffname);
+else
+    fname_out='';globalsvalues=''; namelist_struct=struct();
 end
 return

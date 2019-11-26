@@ -1,32 +1,29 @@
-function nubeam_plot(nubeammat)
+function CD_plot(transpmat, t)
 set(0, 'DefaultLineLineWidth', 2);
 set(0,'defaultAxesFontSize',16);
 %
-% plots informations about nubeam
+% plots informations about rampup
 
 %% collect dimensions
-time = nubeammat.time;
-rho = nubeammat.rho; %time and index dependant
-ind=nubeammat.ind;
-%% collect 1D data
-p_inj = nubeammat.d1.p_inj; % total injected power
-p_ST = nubeammat.d1.p_ST; % shine-through
-p_OL = nubeammat.d1.p_OL; % orbit losses
-p_CX = nubeammat.d1.p_CX; % charge-exchange
-p_e = nubeammat.d1.p_e;
-p_i = nubeammat.d1.p_i;
-p_th = nubeammat.d1.p_th;
-neut = nubeammat.d1.neut;
+time = transpmat.time;
+rho = transpmat.rho; %time and index dependant
+
+try
+    [~,ind]  = min(abs(t-time));
+catch
+    [~,ind]  = min(abs(t(1)-time));
+end
 
 %% collect 2D data
 area = nubeammat.d2.area; %differential area (area of one flux tube)
-j_beam = nubeammat.d2.j_beam; % kA/m^2
+j_beam = transp.allvars.CURB.data*10.; % kA/m^2
+j_OH = transp.allvars.CURB.data*10.;
 pe_beam = nubeammat.d2.pe_beam; %MW/m3
 pi_beam = nubeammat.d2.pi_beam;%MW/m3
 n_beam = nubeammat.d2.n_beam; %1/m3
 pr_beam = nubeammat.d2.pr_beam;
 %% integrate 2D data
-I_beam = dot(j_beam/10.,area); %kA
+I_beam = dot(j_beam/10.,area)*1e-3; %kA
 
 %% plot 1D
 figure('Position', [10 10 1000 1000]);
@@ -74,7 +71,7 @@ ax6=subplot(3,2,6);
 hold on;
 plot(rho, n_beam, 'k')
 hold off;
-xlabel('\rho_{tor}'); ylabel('n [1/m^3]'); grid on; box on;
+xlabel('\rho_{tor}'); ylabel('n [1/cm^3]'); grid on; box on;
 linkaxes([ax2,ax4, ax6], 'x');
 
 return
